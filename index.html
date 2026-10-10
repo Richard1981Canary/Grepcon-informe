@@ -1450,6 +1450,7 @@ function resetForm() {
   document.getElementById('step-name').textContent = stepNames[0];
   currentStep = 0;
   window._draftRecordId = null;
+  if (window._updatePending) { location.reload(); return; }
   document.getElementById('fecha').valueAsDate = new Date();
   window.scrollTo({top:0});
 }
@@ -1636,9 +1637,28 @@ window.addEventListener('online', async () => {
   if (n) showToast(`Vuelves a tener conexión · ${n} ${n === 1 ? 'informe pendiente' : 'informes pendientes'} en Historial`);
 });
 
+function visitInProgress() {
+  const typed = Array.from(document.querySelectorAll('main input[type="text"], main textarea')).some(el => el.value.trim());
+  const marked = state.vg.concat(state.et).some(Boolean) || state['rp-conv'] || state['rp-tiempo'] || state.confianza || state.visitType;
+  return typed || !!marked || document.getElementById('pdf-modal').style.display === 'flex';
+}
+
 // App instalable + funciona sin conexión
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+    // Busca versión nueva cada vez que se vuelve a la app.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+  }).catch(() => {});
+  // Cuando se instala una versión nueva, recarga una vez para mostrarla sin tener que reabrir.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    // No recargar con una visita a medio rellenar: se aplicará al empezar una nueva.
+    if (visitInProgress()) { window._updatePending = true; return; }
+    reloaded = true;
+    location.reload();
+  });
 }
 </script>
 </body>

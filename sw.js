@@ -1,5 +1,5 @@
 // Bump VERSION when shipping changes so installed copies pick them up.
-const VERSION = 'grepcon-informe-v2';
+const VERSION = 'grepcon-informe-v3';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
 
 self.addEventListener('install', e => {
@@ -18,7 +18,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const save = res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; };
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(save).catch(() => caches.match(req).then(r => r || caches.match('index.html'))));
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(save).catch(() => caches.match(req).then(r => r || caches.match('index.html'))));
     return;
   }
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(save)));

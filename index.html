@@ -140,14 +140,14 @@
     color: var(--dark2); margin-bottom: 6px; margin-top: 16px;
   }
   label:first-of-type { margin-top: 0; }
-  input[type="text"], input[type="date"], textarea, select {
+  input[type="text"], input[type="date"], input[type="search"], textarea, select {
     width: 100%; background: var(--white);
     border: 1.5px solid var(--border); border-radius: var(--radius);
     padding: 10px 13px; color: var(--dark);
     font-family: 'Inter', sans-serif; font-size: 16px;
     outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   }
-  input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
+  input[type="text"]:focus, input[type="date"]:focus, input[type="search"]:focus, textarea:focus, select:focus {
     border-color: var(--yellow-dark);
     box-shadow: 0 0 0 3px rgba(255,196,37,0.18);
   }
@@ -327,6 +327,58 @@
     box-shadow: 0 4px 16px rgba(35,40,45,0.25);
   }
 
+  /* TABS: Visita / Historial */
+  .tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); }
+  .tab {
+    flex: 1; border: 0; background: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted);
+    padding: 12px 8px 10px; border-bottom: 3px solid transparent;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .tab.active { color: var(--dark); border-bottom-color: var(--yellow); }
+  .tab:focus-visible { outline: 2px solid var(--dark); outline-offset: -2px; }
+  .tab-badge {
+    min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px;
+    background: var(--warn); color: var(--white); font-size: 11px; font-weight: 700;
+    display: inline-grid; place-items: center;
+  }
+  #historial-panel { display: none; }
+  body.view-hist #historial-panel { display: block; }
+  body.view-hist main > :not(#historial-panel):not(#pdf-modal),
+  body.view-hist .progress-wrap,
+  body.view-hist .header-right { display: none !important; }
+
+  /* HISTORIAL */
+  .hist-head { margin-bottom: 14px; }
+  .hist-pending {
+    background: var(--warn-bg); color: var(--warn); border: 1px solid #FFCC80;
+    border-radius: var(--radius); padding: 10px 14px; font-size: 13px; font-weight: 500;
+    margin-bottom: 12px; line-height: 1.45;
+  }
+  #hist-search { margin-bottom: 14px; }
+  .hist-list { display: flex; flex-direction: column; gap: 10px; }
+  .hist-card {
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .hist-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .hist-title { font-weight: 700; font-size: 15px; color: var(--dark); min-width: 0; overflow-wrap: anywhere; }
+  .hist-meta { font-size: 12px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+  .chip { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; white-space: nowrap; }
+  .chip.pending { background: var(--warn-bg); color: var(--warn); }
+  .chip.sent { background: var(--ok-bg); color: var(--ok); }
+  .hist-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .hist-btn {
+    flex: 1; min-width: 88px; border: 1px solid var(--border); background: var(--yellow-pale);
+    border-radius: var(--radius); padding: 10px 8px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--dark);
+  }
+  .hist-btn.primary { background: var(--yellow); border-color: var(--yellow-dark); }
+  .hist-btn.danger { flex: 0 0 auto; min-width: 48px; color: var(--mejora); background: var(--white); }
+  .hist-btn.danger.confirm { background: var(--mejora); color: var(--white); border-color: var(--mejora); }
+  .hist-empty { text-align: center; color: var(--muted); padding: 40px 16px; line-height: 1.6; }
+  .hist-empty b { color: var(--dark); display: block; font-size: 15px; margin-bottom: 4px; }
+
   @media print {
     header, .nav-buttons, .btn-export, .btn-nueva, .progress-wrap { display: none; }
     body { background: white; }
@@ -354,6 +406,11 @@
   </div>
 </header>
 
+<nav class="tabs" role="tablist" aria-label="Secciones">
+  <button class="tab active" id="tab-nueva" role="tab" aria-selected="true" onclick="showTab('nueva')">📝 Visita</button>
+  <button class="tab" id="tab-hist" role="tab" aria-selected="false" onclick="showTab('hist')">📁 Historial <span class="tab-badge" id="hist-badge" hidden></span></button>
+</nav>
+
 <div class="progress-wrap">
   <div class="steps-row">
     <div class="step-dot active" id="dot-0"></div>
@@ -368,6 +425,17 @@
 </div>
 
 <main>
+
+<!-- HISTORIAL: informes guardados en este dispositivo -->
+<section id="historial-panel" aria-labelledby="hist-title">
+  <div class="hist-head">
+    <div class="section-title" id="hist-title">Historial de visitas</div>
+    <div class="section-time" id="hist-sub">Guardado en este dispositivo · funciona sin conexión</div>
+  </div>
+  <div class="hist-pending" id="hist-pending" hidden></div>
+  <input type="search" id="hist-search" placeholder="Buscar por técnico, cliente o lugar" oninput="renderHistory()">
+  <div class="hist-list" id="hist-list"></div>
+</section>
 
 <!-- PASO 1: DATOS BÁSICOS -->
 <div class="section-card active" id="step-0">
@@ -1203,53 +1271,18 @@ function exportPDF() {
       doc.text(`Pág. ${p} / ${totalPages}`, W - mr, H - 4, { align: 'right' });
     }
 
-    // ── Mostrar PDF en visor modal ────────────────────────────
+    // ── Mostrar PDF en visor modal y guardarlo en el historial ─
     const pdfBlob = doc.output('blob');
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    window._currentPdfBlob = pdfBlob;
-    window._currentPdfUrl = pdfUrl;
-    window._currentPdfName = `visita_${tecnico.replace(/\s+/g,'_')}_${getVal('fecha')}.pdf`;
-
-    const shareBtn = document.getElementById('btn-share');
-    shareBtn.style.display = canShareFile() ? 'inline-block' : 'none';
-
-    const iframe = document.getElementById('pdf-iframe');
-    const fallback = document.getElementById('pdf-fallback');
-
-    iframe.style.display = 'block';
-    fallback.style.display = 'none';
-    fallback.innerHTML = '';
-
-    function showFallback() {
-      iframe.style.display = 'none';
-      fallback.style.display = 'block';
-      fallback.innerHTML = buildHtmlPreview();
-    }
-
-    document.getElementById('pdf-modal').style.display = 'flex';
-
-    if (IS_IOS) {
-      showFallback();
-    } else {
-      iframe.onload = function() {
-        try {
-          const d = iframe.contentDocument;
-          if (!d || d.readyState === 'uninitialized' || (!d.body && !d.title)) showFallback();
-        } catch(e) {
-          showFallback();
-        }
-      };
-      iframe.onerror = () => showFallback();
-      setTimeout(() => {
-        if (fallback.style.display === 'none') {
-          try {
-            const d = iframe.contentDocument;
-            if (!d || !d.body || d.body.innerHTML.trim() === '') showFallback();
-          } catch(e) { showFallback(); }
-        }
-      }, 2000);
-      iframe.src = pdfUrl;
-    }
+    const pdfName = `visita_${tecnico.replace(/\s+/g,'_')}_${getVal('fecha')}.pdf`;
+    const previewHtml = buildHtmlPreview();
+    openPdfViewer(pdfBlob, pdfName, previewHtml, null);
+    saveToHistory(pdfBlob, pdfName, previewHtml)
+      .then(id => {
+        if (window._currentPdfBlob === pdfBlob) window._viewerRecordId = id;
+        showToast('✔ Guardado en Historial');
+        refreshHistBadge();
+      })
+      .catch(err => { console.error(err); showToast('No se pudo guardar en el Historial'); });
 
   } catch(err) {
     console.error(err);
@@ -1257,6 +1290,57 @@ function exportPDF() {
   } finally {
     btn.textContent = '📄 Ver informe en PDF';
     btn.disabled = false;
+  }
+}
+
+// Abre el visor con un PDF (recién generado o del historial).
+function openPdfViewer(pdfBlob, name, html, recordId) {
+  if (window._currentPdfUrl) URL.revokeObjectURL(window._currentPdfUrl);
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  window._currentPdfBlob = pdfBlob;
+  window._currentPdfUrl = pdfUrl;
+  window._currentPdfName = name;
+  window._viewerRecordId = recordId;
+
+  const shareBtn = document.getElementById('btn-share');
+  shareBtn.style.display = canShareFile() ? 'inline-block' : 'none';
+
+  const iframe = document.getElementById('pdf-iframe');
+  const fallback = document.getElementById('pdf-fallback');
+
+  iframe.style.display = 'block';
+  fallback.style.display = 'none';
+  fallback.innerHTML = '';
+
+  function showFallback() {
+    iframe.style.display = 'none';
+    fallback.style.display = 'block';
+    fallback.innerHTML = html;
+  }
+
+  document.getElementById('pdf-modal').style.display = 'flex';
+
+  if (IS_IOS) {
+    showFallback();
+  } else {
+    iframe.onload = function() {
+      try {
+        const d = iframe.contentDocument;
+        if (!d || d.readyState === 'uninitialized' || (!d.body && !d.title)) showFallback();
+      } catch(e) {
+        showFallback();
+      }
+    };
+    iframe.onerror = () => showFallback();
+    setTimeout(() => {
+      if (fallback.style.display === 'none') {
+        try {
+          const d = iframe.contentDocument;
+          if (!d || !d.body || d.body.innerHTML.trim() === '') showFallback();
+        } catch(e) { showFallback(); }
+      }
+    }, 2000);
+    iframe.src = pdfUrl;
   }
 }
 
@@ -1273,6 +1357,7 @@ async function sharePDF() {
   const file = new File([window._currentPdfBlob], window._currentPdfName, { type: 'application/pdf' });
   try {
     await navigator.share({ files: [file], title: 'Informe de Visita · GREPCON' });
+    if (window._viewerRecordId) await markSent(window._viewerRecordId);
   } catch(e) {
     if (e.name !== 'AbortError') showToast('No se pudo compartir. Usa "Guardar".');
   }
@@ -1286,6 +1371,7 @@ function closePDFModal() {
   document.getElementById('pdf-fallback').innerHTML = '';
   if (window._currentPdfUrl) { URL.revokeObjectURL(window._currentPdfUrl); window._currentPdfUrl = null; }
   window._currentPdfBlob = null;
+  window._viewerRecordId = null;
 }
 
 function buildHtmlPreview() {
@@ -1363,12 +1449,192 @@ function resetForm() {
   document.getElementById('step-counter').textContent = 'Paso 1 de 7';
   document.getElementById('step-name').textContent = stepNames[0];
   currentStep = 0;
+  window._draftRecordId = null;
   document.getElementById('fecha').valueAsDate = new Date();
   window.scrollTo({top:0});
 }
 
 // Set today's date by default
 document.getElementById('fecha').valueAsDate = new Date();
+
+// ── HISTORIAL ────────────────────────────────────────────────
+// Cada PDF generado se guarda en IndexedDB (en el propio dispositivo), así se puede
+// ver y compartir más tarde aunque no haya conexión en el momento de la visita.
+const HistDB = (() => {
+  let dbp;
+  function open() {
+    return dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('grepcon-informes', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('informes', { keyPath: 'id' });
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }));
+  }
+  function run(mode, fn) {
+    return open().then(db => new Promise((res, rej) => {
+      const t = db.transaction('informes', mode);
+      const req = fn(t.objectStore('informes'));
+      t.oncomplete = () => res(req.result);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    }));
+  }
+  return {
+    put: rec => run('readwrite', st => st.put(rec)),
+    get: id => run('readonly', st => st.get(id)),
+    all: () => run('readonly', st => st.getAll()),
+    del: id => run('readwrite', st => st.delete(id)),
+  };
+})();
+
+const rawVal = id => ((document.getElementById(id) || {}).value || '').trim();
+
+// Guarda el informe actual. Si se vuelve a generar el PDF de la misma visita (tras editar),
+// se actualiza el mismo registro en lugar de duplicarlo, y vuelve a quedar pendiente de enviar.
+async function saveToHistory(pdfBlob, name, html) {
+  const now = new Date().toISOString();
+  const id = window._draftRecordId || ('v' + Date.now());
+  const prev = window._draftRecordId ? await HistDB.get(id) : null;
+  await HistDB.put({
+    id, nombre: name, html,
+    pdf: await pdfBlob.arrayBuffer(),
+    creado: prev ? prev.creado : now, actualizado: now,
+    tecnico: rawVal('tecnico'), proyecto: rawVal('proyecto'), ubicacion: rawVal('ubicacion'),
+    fecha: rawVal('fecha'), jefe: rawVal('jefe'), tipo: state.visitType,
+    enviado: null,
+  });
+  window._draftRecordId = id;
+  return id;
+}
+
+async function markSent(id) {
+  const rec = await HistDB.get(id);
+  if (!rec) return;
+  rec.enviado = new Date().toISOString();
+  await HistDB.put(rec);
+  refreshHistBadge();
+  if (document.body.classList.contains('view-hist')) renderHistory();
+}
+
+const fmtFecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f.split('-').reverse().join('/') : (f || '—');
+const fmtStamp = iso => {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+};
+const tipoLabel = { tramite: '📋 Visita de trámite', correcta: '✅ Visita correcta', grepcon: '⭐ Visita GREPCON' };
+
+async function loadHistory() {
+  try {
+    const all = await HistDB.all();
+    return all.sort((a, b) => (b.actualizado || '').localeCompare(a.actualizado || ''));
+  } catch (e) { console.error(e); return []; }
+}
+
+async function refreshHistBadge() {
+  const pending = (await loadHistory()).filter(r => !r.enviado).length;
+  const b = document.getElementById('hist-badge');
+  b.textContent = pending;
+  b.hidden = pending === 0;
+  b.title = pending + ' pendiente(s) de enviar';
+  return pending;
+}
+
+async function renderHistory() {
+  const list = document.getElementById('hist-list');
+  const all = await loadHistory();
+  const q = rawVal('hist-search').toLowerCase();
+  const items = q ? all.filter(r => [r.tecnico, r.proyecto, r.ubicacion, r.jefe].join(' ').toLowerCase().includes(q)) : all;
+  const pending = all.filter(r => !r.enviado).length;
+
+  const banner = document.getElementById('hist-pending');
+  banner.hidden = pending === 0;
+  banner.textContent = `⏳ ${pending} ${pending === 1 ? 'informe pendiente' : 'informes pendientes'} de enviar. Toca "Compartir" cuando quieras enviarlo; si no hay conexión, WhatsApp o el correo lo enviarán en cuanto vuelva.`;
+  document.getElementById('hist-sub').textContent =
+    `${all.length} ${all.length === 1 ? 'informe guardado' : 'informes guardados'} en este dispositivo · funciona sin conexión`;
+
+  if (!all.length) {
+    list.innerHTML = '<div class="hist-empty"><b>Todavía no hay informes guardados</b>Cuando generes el PDF de una visita, se guardará aquí automáticamente para verlo o compartirlo más tarde.</div>';
+    return;
+  }
+  if (!items.length) {
+    list.innerHTML = '<div class="hist-empty"><b>Sin resultados</b>No hay informes que coincidan con la búsqueda.</div>';
+    return;
+  }
+  list.innerHTML = items.map(r => `
+    <article class="hist-card">
+      <div class="hist-top">
+        <div class="hist-title">${esc(r.proyecto || 'Sin cliente')}</div>
+        ${r.enviado
+          ? `<span class="chip sent">✔ Enviado ${esc(fmtStamp(r.enviado))}</span>`
+          : '<span class="chip pending">⏳ Pendiente de enviar</span>'}
+      </div>
+      <div class="hist-meta">👷 ${esc(r.tecnico || '—')} · 📍 ${esc(r.ubicacion || '—')} · 📅 ${esc(fmtFecha(r.fecha))}</div>
+      <div class="hist-meta">${r.tipo ? tipoLabel[r.tipo] + ' · ' : ''}Guardado ${esc(fmtStamp(r.actualizado))}</div>
+      <div class="hist-actions">
+        <button class="hist-btn" onclick="histView('${r.id}')">👁 Ver</button>
+        <button class="hist-btn primary" onclick="histShare('${r.id}')">📤 Compartir</button>
+        <button class="hist-btn danger" onclick="histDelete('${r.id}', this)" aria-label="Borrar informe">🗑</button>
+      </div>
+    </article>`).join('');
+}
+
+async function histView(id) {
+  const r = await HistDB.get(id);
+  if (!r) return;
+  openPdfViewer(new Blob([r.pdf], { type: 'application/pdf' }), r.nombre, r.html, r.id);
+}
+
+async function histShare(id) {
+  const r = await HistDB.get(id);
+  if (!r) return;
+  const file = new File([r.pdf], r.nombre, { type: 'application/pdf' });
+  if (canShareFile()) {
+    try {
+      await navigator.share({ files: [file], title: 'Informe de Visita · GREPCON' });
+      await markSent(id);
+      showToast('✔ Marcado como enviado');
+    } catch (e) {
+      if (e.name !== 'AbortError') showToast('No se pudo compartir. Ábrelo con "Ver" y usa "Guardar".');
+    }
+  } else {
+    histView(id);
+  }
+}
+
+// Borrar pide una segunda pulsación para evitar errores.
+async function histDelete(id, btn) {
+  if (!btn.classList.contains('confirm')) {
+    btn.classList.add('confirm');
+    btn.textContent = '¿Borrar?';
+    setTimeout(() => { if (btn.isConnected) { btn.classList.remove('confirm'); btn.textContent = '🗑'; } }, 3000);
+    return;
+  }
+  await HistDB.del(id);
+  if (window._draftRecordId === id) window._draftRecordId = null;
+  showToast('Informe borrado');
+  renderHistory();
+  refreshHistBadge();
+}
+
+function showTab(which) {
+  const hist = which === 'hist';
+  document.body.classList.toggle('view-hist', hist);
+  document.getElementById('tab-nueva').classList.toggle('active', !hist);
+  document.getElementById('tab-hist').classList.toggle('active', hist);
+  document.getElementById('tab-nueva').setAttribute('aria-selected', !hist);
+  document.getElementById('tab-hist').setAttribute('aria-selected', hist);
+  if (hist) renderHistory();
+  window.scrollTo({ top: 0 });
+}
+
+// Pide al sistema que no borre los informes guardados aunque falte espacio.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+refreshHistBadge();
+window.addEventListener('online', async () => {
+  const n = await refreshHistBadge();
+  if (n) showToast(`Vuelves a tener conexión · ${n} ${n === 1 ? 'informe pendiente' : 'informes pendientes'} en Historial`);
+});
 
 // App instalable + funciona sin conexión
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

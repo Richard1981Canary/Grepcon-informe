@@ -16,4 +16,18 @@ En GitHub: *Settings → Pages → Source: Deploy from a branch*, rama `main`, c
 - En el visor del PDF, **📤 Compartir** abre la hoja del móvil (WhatsApp, correo, Teams…).
 - Funciona sin conexión una vez abierta por primera vez.
 
+## Historial
+
+Cada vez que se genera el PDF, el informe se guarda automáticamente en la pestaña
+**📁 Historial**, dentro del propio dispositivo. Desde ahí se puede:
+
+- **Ver** el informe de nuevo.
+- **Compartir** el PDF más tarde (útil si en la visita no había conexión). Al compartirlo
+  queda marcado como *Enviado*; los que faltan aparecen como *Pendiente de enviar* y se
+  cuentan en el número naranja de la pestaña.
+- **Buscar** por técnico, cliente o lugar, y **borrar** informes (pide confirmación).
+
+Los informes se guardan solo en ese teléfono o tableta: no se comparten entre dispositivos
+y se pierden si se desinstala la app o se borran los datos del navegador.
+
 Al publicar cambios, sube `VERSION` en `sw.js` para que las apps instaladas se actualicen.

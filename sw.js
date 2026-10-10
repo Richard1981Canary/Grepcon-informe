@@ -1,5 +1,5 @@
 // Bump VERSION when shipping changes so installed copies pick them up.
-const VERSION = 'grepcon-informe-v3';
+const VERSION = 'grepcon-informe-v4';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
 
 self.addEventListener('install', e => {
